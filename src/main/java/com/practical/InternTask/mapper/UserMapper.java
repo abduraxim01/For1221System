@@ -15,7 +15,7 @@ public class UserMapper {
                 .purpose(Purpose.valueOf(dto.getPurpose()))
                 .age(dto.getAge())
                 .email(dto.getEmail())
-                .gender(Gender.valueOf(dto.getName()))
+                .gender(Gender.valueOf(dto.getGender()))
                 .height(dto.getHeight())
                 .weight(dto.getWeight())
                 .build();

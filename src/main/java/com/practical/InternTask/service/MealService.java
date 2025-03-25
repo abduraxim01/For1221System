@@ -10,7 +10,8 @@ import com.practical.InternTask.repository.MealRepository;
 import com.practical.InternTask.repository.OrderRepository;
 import com.practical.InternTask.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
-import org.slf4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -26,7 +27,8 @@ public class MealService {
     private final OrderRepository orderRep;
 
     private final UserRepository userRep;
-    private Logger logger;
+
+    final private Logger log = LogManager.getLogger(MealService.class);
 
     @Autowired
     public MealService(MealMapper mealMap, MealRepository mealRep, OrderRepository orderRep, UserRepository userRep) {
@@ -38,16 +40,18 @@ public class MealService {
 
     public void createMeal(MealDTO mealDTO) throws Exception {
         if (!mealRep.existsByName(mealDTO.getName())) {
-            logger.info("New meal {} created", mealDTO.getName());
+            log.info("New meal {} created", mealDTO.getName());
             mealRep.save(mealMap.toModel(mealDTO));
+            return;
         }
-        logger.error("Meal {} already exists", mealDTO.getName());
+        log.error("Meal {} already exists", mealDTO.getName());
         throw new Exception();
     }
 
     public void eating(OrderDTO orderDTO) {
         Meal meal = mealRep.findById(orderDTO.getMealId()).orElseThrow(() -> new EntityNotFoundException("Meal not found"));
         User user = userRep.findById(orderDTO.getUserId()).orElseThrow(() -> new EntityNotFoundException("User not found"));
+        log.info("{} ordered {}", user.getName(), meal.getName());
         orderRep.save(Order.builder()
                 .day(LocalDate.now())
                 .meal(meal)

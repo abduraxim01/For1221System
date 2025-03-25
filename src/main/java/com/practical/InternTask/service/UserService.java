@@ -8,11 +8,12 @@ import com.practical.InternTask.modelDTO.DailyEating;
 import com.practical.InternTask.modelDTO.MealDTO;
 import com.practical.InternTask.modelDTO.ResultDTO;
 import com.practical.InternTask.modelDTO.UserDTO;
-import com.practical.InternTask.repository.MealRepository;
 import com.practical.InternTask.repository.OrderRepository;
 import com.practical.InternTask.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
-import org.slf4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -28,18 +29,16 @@ public class UserService {
 
     private final UserMapper userMap;
 
-    private final MealRepository mealRep;
-
     private final OrderRepository orderRep;
 
     private final MealMapper mealMap;
 
-    private Logger log;
+    final private Logger log = LogManager.getLogger(UserService.class);
 
-    public UserService(UserRepository userRep, UserMapper userMap, MealRepository mealRep, OrderRepository orderRep, MealMapper mealMap) {
+    @Autowired
+    public UserService(UserRepository userRep, UserMapper userMap, OrderRepository orderRep, MealMapper mealMap) {
         this.userRep = userRep;
         this.userMap = userMap;
-        this.mealRep = mealRep;
         this.orderRep = orderRep;
         this.mealMap = mealMap;
     }
@@ -48,29 +47,25 @@ public class UserService {
         if (!userRep.existsByEmail(user.getEmail())) {
             log.info("New user {} registered", user.getName());
             userRep.save(userMap.toModel(user));
+            return;
         }
         log.error("User with email {} already exists", user.getEmail());
         throw new Exception();
     }
 
     public List<MealDTO> getDailyEating(DailyEating daily) {
-        User user = userRep.findById(daily.getUserId()).orElseThrow(() -> new EntityNotFoundException("User with id " + daily.getUserId() + " not found"));
+        User user = userRep.findById(UUID.fromString(daily.getUserId())).orElseThrow(() -> new EntityNotFoundException("User with id " + daily.getUserId() + " not found"));
         List<Order> orders = orderRep.findByUser(user);
         return mealMap.toDTO(orders.stream()
-                .filter(order -> order.getDay().getDayOfYear() == daily.getDay().getDayOfYear())
+                .filter(order -> order.getDay().isEqual(daily.getDay()))
                 .map(Order::getMeal)
                 .toList());
     }
 
-    public Map<MealDTO, Float> getDailyEatingWithCalories(DailyEating daily) {
-        User user = userRep.findById(daily.getUserId()).orElseThrow(() -> new EntityNotFoundException("User with id " + daily.getUserId() + " not found"));
-        List<Order> orders = orderRep.findByUser(user);
-        List<MealDTO> mealDTOS = mealMap.toDTO(orders.stream()
-                .filter(order -> order.getDay().getDayOfYear() == daily.getDay().getDayOfYear())
-                .map(Order::getMeal)
-                .toList());
-        Map<MealDTO, Float> result = new HashMap<>();
-        mealDTOS.forEach(mealDTO -> result.put(mealDTO, mealDTO.getProtein() * 4 + mealDTO.getCarbs() * 4 + mealDTO.getFat() * 9));
+    public Map<String, Float> getDailyEatingWithCalories(DailyEating daily) {
+        List<MealDTO> mealDTOS = this.getDailyEating(daily);
+        Map<String, Float> result = new HashMap<>();
+        mealDTOS.forEach(mealDTO -> result.put(mealDTO.toString(), mealDTO.getProtein() * 4 + mealDTO.getCarbs() * 4 + mealDTO.getFat() * 9));
         return result;
     }
 
@@ -84,17 +79,17 @@ public class UserService {
         switch (user.getPurpose()) {
             case BODY_CARE: {
                 if (dailyCal == recommendedCal) result.setContent("Awesome");
-                else result.setContent("Bad. You must do something");
+                else result.setContent("Bro, your business is bad");
             }
             break;
             case WEIGHT_GAIN: {
                 if (dailyCal >= recommendedCal) result.setContent("Awesome");
-                else result.setContent("Bad. You must do something");
+                else result.setContent("Bro, your business is bad");
             }
             break;
             case WEIGHT_LOSS: {
                 if (dailyCal <= recommendedCal) result.setContent("Awesome");
-                else result.setContent("Bad. You must do something");
+                else result.setContent("Bro, your business is bad");
             }
         }
         return result;
@@ -109,7 +104,7 @@ public class UserService {
     public float dailyCalorie(User user) {
         List<MealDTO> mealDTOS = getDailyEating(DailyEating.builder()
                 .day(LocalDate.now())
-                .userId(user.getId())
+                .userId(user.getId().toString())
                 .build());
         return mealDTOS.stream()
                 .map(mealDTO -> mealDTO.getProtein() * 4 + mealDTO.getCarbs() * 4 + mealDTO.getFat() * 9)

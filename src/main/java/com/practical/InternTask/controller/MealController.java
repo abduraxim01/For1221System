@@ -3,7 +3,7 @@ package com.practical.InternTask.controller;
 import com.practical.InternTask.modelDTO.MealDTO;
 import com.practical.InternTask.modelDTO.OrderDTO;
 import com.practical.InternTask.service.MealService;
-import com.practical.InternTask.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -20,15 +20,13 @@ public class MealController {
 
     private final MealService mealSer;
 
-    private final UserService userSer;
-
     @Autowired
-    public MealController(MealService mealSer, UserService userSer) {
+    public MealController(MealService mealSer) {
         this.mealSer = mealSer;
-        this.userSer = userSer;
     }
 
     @PostMapping(value = "/createMeal")
+    @Operation(description = "Api is used to create new food")
     public ResponseEntity<Void> createMeal(@RequestBody MealDTO dto) {
         try {
             mealSer.createMeal(dto);
@@ -39,6 +37,7 @@ public class MealController {
     }
 
     @PostMapping(value = "/eating")
+    @Operation(description = "Api is used to add food to orders")
     public ResponseEntity<Void> eating(@RequestBody OrderDTO dto) {
         try {
             mealSer.eating(dto);

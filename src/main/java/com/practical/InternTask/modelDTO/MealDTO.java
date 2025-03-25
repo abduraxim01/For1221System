@@ -18,4 +18,13 @@ public class MealDTO {
     private float carbs;
 
     private float fat;
+
+    @Override
+    public String toString() {
+        return "Name= " + name  +
+                ", calorie=" + calorie +
+                ", protein=" + protein +
+                ", carbs=" + carbs +
+                ", fat=" + fat;
+    }
 }

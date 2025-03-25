@@ -3,7 +3,6 @@ package com.practical.InternTask.modelDTO;
 import lombok.*;
 
 import java.time.LocalDate;
-import java.util.UUID;
 
 @Getter
 @Setter
@@ -12,7 +11,7 @@ import java.util.UUID;
 @Builder
 public class DailyEating {
 
-    private UUID userId;
+    private String userId;
 
     private LocalDate day;
 }
